@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MB_Auto_CutObject1.Classes;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -155,60 +156,100 @@ namespace MB_Auto_CutObject1.Models
                 Solid solidpart1 = selectedPart1.GetSolid();
                 //Получаем толщину продольного ребра
                 WorkPlaneHandler workPlaneHandler = Model.GetWorkPlaneHandler();
-                TransformationPlane tpcurrent = workPlaneHandler.GetCurrentTransformationPlane();
+                //TransformationPlane tpcurrent = workPlaneHandler.GetCurrentTransformationPlane();
                 TransformationPlane tppart = new TransformationPlane(selectedPart.GetCoordinateSystem());
                 TransformationPlane tppart1 = new TransformationPlane(selectedPart1.GetCoordinateSystem());
+                
+                workPlaneHandler.SetCurrentTransformationPlane(tppart1);
+                _Width1 = Math.Round(solidpart1.MaximumPoint.Z - solidpart1.MinimumPoint.Z);
+                
+                workPlaneHandler.SetCurrentTransformationPlane(tppart);
 
-                //workPlaneHandler.SetCurrentTransformationPlane(tppart1);
-                //_Width1 = Math.Round(solidpart1.MaximumPoint.Z - solidpart1.MinimumPoint.Z);
-                //workPlaneHandler.SetCurrentTransformationPlane(tppart);
+
+                //Теория
+                GeometricPlane geometricPlane = new GeometricPlane(
+                    selectedPart.GetCoordinateSystem().Origin,
+                    selectedPart.GetCoordinateSystem().AxisX,
+                    selectedPart.GetCoordinateSystem().AxisY);
+                GeometricPlane geometricPlane1 = new GeometricPlane(
+                    selectedPart1.GetCoordinateSystem().Origin,
+                    selectedPart1.GetCoordinateSystem().AxisX,
+                    selectedPart1.GetCoordinateSystem().AxisY);
+                Line line = Intersection.PlaneToPlane(geometricPlane, geometricPlane1);
                 
 
-                
+
+                //Визуализировать
                 Plane plane = new Plane
                 {
                     Origin = selectedPart.GetCoordinateSystem().Origin,
                     AxisX = selectedPart.GetCoordinateSystem().AxisX,
                     AxisY = selectedPart.GetCoordinateSystem().AxisY
                 };
-                ControlPlane controlPlane = new ControlPlane(plane, false);
-                controlPlane.Insert();
-
                 Plane plane1 = new Plane
                 {
                     Origin = selectedPart1.GetCoordinateSystem().Origin,
                     AxisX = selectedPart1.GetCoordinateSystem().AxisX,
                     AxisY = selectedPart1.GetCoordinateSystem().AxisY
                 };
+                ControlPlane controlPlane = new ControlPlane(plane, false);
+                controlPlane.Insert();
                 ControlPlane controlPlane1 = new ControlPlane(plane1, false);
                 controlPlane1.Insert();
                 
-                GeometricPlane geometricPlane = new GeometricPlane(selectedPart.GetCoordinateSystem());
-                GeometricPlane geometricPlane1 = new GeometricPlane(selectedPart1.GetCoordinateSystem());
                 
-                Line line = Intersection.PlaneToPlane(geometricPlane, geometricPlane1);
-                
-                ControlPoint cpOrigin = new ControlPoint(line.Origin);
-                cpOrigin.Insert();
 
-                ControlPoint cpDirection = new ControlPoint(line.Direction);
-                cpDirection.Insert();
-
-                ControlLine controlLine = new ControlLine();
-                controlLine.Line = new LineSegment(line.Origin, line.Direction);
+                line.Direction.Normalize(10000);
+                line.Origin.Translate(-line.Direction.X / 2, -line.Direction.Y / 2, -line.Direction.Z / 2);
+                TSG.Point secondpoint = new TSG.Point(line.Origin);
                 
+                secondpoint.Translate(line.Direction.X, line.Direction.Y, line.Direction.Z);
+   
+
+                LineSegment lineSegment = new LineSegment(line.Origin, secondpoint);
+                ControlLine controlLine = new ControlLine(lineSegment, false);
                 controlLine.Insert();
 
 
-                FaceEnumerator faceEnum = solidpart1.GetFaceEnumerator();
-                while (faceEnum.MoveNext())
+                ArrayList interFirstPoints = solidpart.Intersect(lineSegment);
+                ArrayList interSecondPoints = solidpart1.Intersect(lineSegment);
+                List<DifferencePoints> differencePoints = new List<DifferencePoints>();
+                foreach (TSG.Point interFirstPoint in interFirstPoints)
                 {
-                    Face face = faceEnum.Current;
+                    foreach (TSG.Point interSecondPoint in interSecondPoints)
+                    {
+                        DifferencePoints differencePoint = new DifferencePoints(interFirstPoint, interSecondPoint);
+                        differencePoints.Add(differencePoint);
+                    }
                 }
-                
-                /*
-                ContourPoint selectedpoint1 = new ContourPoint(new TSG.Point(line.Origin.X, line.Origin.Y, line.Origin.Z), null);
-                ContourPoint selectedpoint2 = new ContourPoint(new TSG.Point(line.Origin.X + 10, line.Origin.Y, line.Origin.Z), null);
+                differencePoints.Sort();
+                ControlPoint controlPoint = new ControlPoint(differencePoints[0].Point1);
+                controlPoint.Insert();
+
+
+                TransformationPlane tprotate = new TransformationPlane(
+                    controlPoint.Point,
+                    new TSG.Vector(line.Direction),
+                    new TSG.Vector(new TSG.Point(0, 0, 100)));
+                workPlaneHandler.SetCurrentTransformationPlane(tprotate);
+                ControlPoint cpX = new ControlPoint(new TSG.Point(0, 0, 100));
+                cpX.Insert();
+                TransformationPlane tpdrawing = new TransformationPlane(
+                    controlPoint.Point,
+                    new TSG.Vector(new TSG.Point(0, 0, 100)),
+                    new TSG.Vector(line.Direction));
+                workPlaneHandler.SetCurrentTransformationPlane(tpdrawing);
+
+                //Matrix matrix = MatrixFactory.Rotate(180 * 180 / Math.PI, line.Direction);
+                //TSG.Point pointX = matrix.Transform(controlPoint.Point);
+                //ControlPoint cpX = new ControlPoint(pointX);
+                //ControlPoint cpX = new ControlPoint(new TSG.Point(controlPoint.Point.X + 100, controlPoint.Point.Y = 100));
+                //cpX.Insert();
+
+                //Построение
+
+                ContourPoint selectedpoint1 = new ContourPoint(controlPoint.Point, null);
+                ContourPoint selectedpoint2 = new ContourPoint(new TSG.Point(100, 0,0), null);
 
                 double centerpart = (solidpart.MaximumPoint.Z + solidpart.MinimumPoint.Z) / 2;
 
@@ -432,7 +473,7 @@ namespace MB_Auto_CutObject1.Models
                         endCS.AxisY = new TSG.Vector(0, 0, -1000);
                         break;
                 }
-
+                
                 booleanCP.Class = BooleanPart.BooleanOperativeClassName;
                 booleanCP.Insert();
                 Operation.MoveObject(booleanCP, startCS, endCS);
@@ -443,7 +484,7 @@ namespace MB_Auto_CutObject1.Models
                 booleanPart.Insert();
                 booleanCP.Delete();
                 Operation.DisplayPrompt("Готово");
-                */
+                
             }
             catch (Exception Exc)
             {
