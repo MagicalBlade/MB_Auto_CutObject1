@@ -227,29 +227,44 @@ namespace MB_Auto_CutObject1.Models
                 controlPoint.Insert();
 
 
-                TransformationPlane tprotate = new TransformationPlane(
-                    controlPoint.Point,
-                    new TSG.Vector(line.Direction),
-                    new TSG.Vector(new TSG.Point(0, 0, 100)));
-                workPlaneHandler.SetCurrentTransformationPlane(tprotate);
-                ControlPoint cpX = new ControlPoint(new TSG.Point(0, 0, 100));
-                cpX.Insert();
-                TransformationPlane tpdrawing = new TransformationPlane(
-                    controlPoint.Point,
-                    new TSG.Vector(new TSG.Point(0, 0, 100)),
-                    new TSG.Vector(line.Direction));
-                workPlaneHandler.SetCurrentTransformationPlane(tpdrawing);
-
-                //Matrix matrix = MatrixFactory.Rotate(180 * 180 / Math.PI, line.Direction);
-                //TSG.Point pointX = matrix.Transform(controlPoint.Point);
-                //ControlPoint cpX = new ControlPoint(pointX);
-                //ControlPoint cpX = new ControlPoint(new TSG.Point(controlPoint.Point.X + 100, controlPoint.Point.Y = 100));
+                //TransformationPlane tprotate = new TransformationPlane(
+                //    controlPoint.Point,
+                //    new TSG.Vector(line.Direction),
+                //    new TSG.Vector(new TSG.Point(0, 0, 100)));
+                //workPlaneHandler.SetCurrentTransformationPlane(tprotate);
+                //ControlPoint cpX = new ControlPoint(new TSG.Point(0, 0, 100));
                 //cpX.Insert();
+                //TransformationPlane tpdrawing = new TransformationPlane(
+                //    controlPoint.Point,
+                //    new TSG.Vector(new TSG.Point(0, 0, 100)),
+                //    new TSG.Vector(line.Direction));
+                //workPlaneHandler.SetCurrentTransformationPlane(tpdrawing);
 
+
+                workPlaneHandler.SetCurrentTransformationPlane(
+                    new TransformationPlane(
+                        new CoordinateSystem(controlPoint.Point,
+                    new TSG.Vector(100, 0 ,0),
+                    new TSG.Vector(0, 100, 0)
+                    )));
+
+
+
+                Matrix matrix = MatrixFactory.Rotate(-90 * Math.PI / 180, new TSG.Vector(0, 0, 100));
+                TSG.Point pointX = matrix.Transform(new TSG.Point(secondpoint.X - controlPoint.Point.X, secondpoint.Y - controlPoint.Point.Y));
+                ControlPoint cpX = new ControlPoint(pointX);
+                cpX.Insert();
+
+                ControlPoint cptest = new ControlPoint(new TSG.Point(0,0));
+                cptest.Insert();
+                ControlPoint cptestx = new ControlPoint(new TSG.Point(100, 0));
+                cptestx.Insert();
+                ControlPoint cptesty = new ControlPoint(new TSG.Point(0, 200));
+                cptesty.Insert();
                 //Построение
 
-                ContourPoint selectedpoint1 = new ContourPoint(controlPoint.Point, null);
-                ContourPoint selectedpoint2 = new ContourPoint(new TSG.Point(100, 0,0), null);
+                ContourPoint selectedpoint1 = new ContourPoint(new TSG.Point(0,0,0), null);
+                ContourPoint selectedpoint2 = new ContourPoint(pointX, null);
 
                 double centerpart = (solidpart.MaximumPoint.Z + solidpart.MinimumPoint.Z) / 2;
 
