@@ -202,7 +202,6 @@ namespace MB_Auto_CutObject1.Models
                 differencePoints.Sort();
                 //Наименьшая разница указывает что точки находтся ближе всего друг к другу
                 TSG.Point installationPoint = differencePoints[0].Point1; //Точка установки выреза
-
                 //Вектор линии пересечения у нас будет осью Y. Нужно получить ось X
                 //Получаю ее путем переноса точки с линии пересечения под 90 градусов к вектору линии пересечения
                 Matrix matrix = MatrixFactory.Rotate(90 * Math.PI / 180, new TSG.Vector(0, 0, 100));

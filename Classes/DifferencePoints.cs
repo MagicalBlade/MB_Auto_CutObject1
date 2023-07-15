@@ -25,7 +25,7 @@ namespace MB_Auto_CutObject1.Classes
         {
             Point1 = point1;
             Point2 = point2;
-            Difference = Math.Abs((Point1.X - Point2.X) + (Point1.Y - Point2.Y) + (Point1.Z - Point2.Z));
+            Difference = Math.Abs(Point1.X - Point2.X) + Math.Abs(Point1.Y - Point2.Y) + Math.Abs(Point1.Z - Point2.Z);
         }
 
         public int CompareTo(object obj)
