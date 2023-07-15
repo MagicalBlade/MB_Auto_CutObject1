@@ -133,12 +133,12 @@ namespace MB_Auto_CutObject1.Models
         {
             List<InputDefinition> Input = new List<InputDefinition>();
             Picker Picker = new Picker();
-            Part part = (Part)Picker.PickObject(Picker.PickObjectEnum.PICK_ONE_PART);
-            Part part1 = (Part)Picker.PickObject(Picker.PickObjectEnum.PICK_ONE_PART);
+
+            Part part = (Part)Picker.PickObject(Picker.PickObjectEnum.PICK_ONE_PART, "Выберите деталь в которой будет вырез");
+            Part part1 = (Part)Picker.PickObject(Picker.PickObjectEnum.PICK_ONE_PART, "Выберите продольное ребро");
 
             Input.Add(new InputDefinition(part.Identifier));
             Input.Add(new InputDefinition(part1.Identifier));
-
             return Input;
         }
 
@@ -213,7 +213,7 @@ namespace MB_Auto_CutObject1.Models
                 //Для использования ранее полученных точке в новой ситеме координат необходимо преобразовать их с помощью матрицы
                 Matrix toNewCS = MatrixFactory.ByCoordinateSystems(selectedPart.GetCoordinateSystem(), drawing_cs);
 
-                int route = 1; //Направление оси Y
+                int routeY = 1; //Направление оси Y
                 //Проверяем куда направлено продольное реберо в новой системе координат относительно точки установки
                 //Это необходимо для понимания как распологать вырез
                 foreach (TSG.Point interSecondPoint in interSecondPoints)
@@ -222,18 +222,18 @@ namespace MB_Auto_CutObject1.Models
                     {
                         if (toNewCS.Transform(interSecondPoint).Y > 0)
                         {
-                            route = -1;
+                            routeY = -1;
                         }
                     }
                 }
                 //Меняю систему координат на новую с нулём в точке установки и направленную по линии пересечения
                 workPlaneHandler.SetCurrentTransformationPlane(new TransformationPlane(drawing_cs));
 
-                _Height = Math.Abs(Math.Abs(toNewCS.Transform(interSecondPoints[0] as TSG.Point).Y) - Math.Abs(toNewCS.Transform(interSecondPoints[1] as TSG.Point).Y));
-                
+                //_Height = Math.Abs(toNewCS.Transform(interSecondPoints[0] as TSG.Point).Y - toNewCS.Transform(interSecondPoints[1] as TSG.Point).Y);
+                _Height = Math.Abs(toNewCS.Transform(interSecondPoints[0] as TSG.Point).Y);
                 //Построение
                 ContourPoint selectedpoint1 = new ContourPoint(new TSG.Point(0,0), null);
-                ContourPoint selectedpoint2 = new ContourPoint(new TSG.Point(route * 100, 0), null);
+                ContourPoint selectedpoint2 = new ContourPoint(new TSG.Point(routeY * 100, 0), null);
 
                 double centerpart = (solidpart.MaximumPoint.Z + solidpart.MinimumPoint.Z) / 2;
 
@@ -265,21 +265,51 @@ namespace MB_Auto_CutObject1.Models
                         break;
                     case 2:
                         {
-                            //Подготовка данных для получения точки касательной к окружности
-                            double hyp = Math.Sqrt(Math.Pow(_Width + _Width1 / 2, 2) + Math.Pow(_Height + _Height1, 2));
-                            double angle1 = Math.Acos(_Radius / hyp);
-                            double angle2 = Math.Acos((_Height + _Height1) / hyp);
-                            double angle3 = (angle1 + angle2) - 90 * Math.PI / 180;
-                            double hkat = _Radius * Math.Cos(angle3);
-                            double vkat = _Radius * Math.Sin(angle3);
-                            //Координата Х для удлинения выреза
-                            double offsetX = _OffsetH * Math.Tan(angle3);
-
-                            AddContourPoint(0 - _Width - _Width1 / 2 - offsetX, _OffsetH, centerpart, booleanCP, null);
-                            AddContourPoint(0 - hkat, -(_Height + _Height1 + vkat), centerpart, booleanCP, null);
+                            TSG.Point offsetpoint = OffsetPoint(- _Width - _Width1 / 2, 0);
+                 
+                            AddContourPoint(offsetpoint.X, offsetpoint.Y, centerpart, booleanCP, null);
+                            {
+                                //Подготовка данных для получения точки касательной к окружности
+                                double hyp = Math.Sqrt(Math.Pow(_Width + _Width1 / 2, 2) + Math.Pow(_Height + _Height1 + offsetpoint.Y, 2));
+                                double angle1 = Math.Acos(_Radius / hyp);
+                                double angle2 = Math.Acos((_Height + _Height1 + offsetpoint.Y) / hyp);
+                                double angle3 = (angle1 + angle2) - 90 * Math.PI / 180;
+                                double hkat = _Radius * Math.Cos(angle3);
+                                double vkat = _Radius * Math.Sin(angle3);
+                                //Координата Х для удлинения выреза
+                                double offsetX = _OffsetH * Math.Tan(angle3);
+                                AddContourPoint(0 - hkat, -(_Height + _Height1 + vkat), centerpart, booleanCP, null);
+                            }
                             AddContourPoint(0, -(_Height + _Height1 + _Radius), centerpart, booleanCP, new Chamfer(_Radius, 0, Chamfer.ChamferTypeEnum.CHAMFER_ARC_POINT));
-                            AddContourPoint(hkat, -(_Height + _Height1 + vkat), centerpart, booleanCP, null);
-                            AddContourPoint(_Width + _Width1 / 2 + offsetX, _OffsetH, centerpart, booleanCP, null);
+                            {
+                                //Подготовка данных для получения точки касательной к окружности
+                                double hyp = Math.Sqrt(Math.Pow(_Width + _Width1 / 2, 2) + Math.Pow(_Height + _Height1 - offsetpoint.Y, 2));
+                                double angle1 = Math.Acos(_Radius / hyp);
+                                double angle2 = Math.Acos((_Height + _Height1 - offsetpoint.Y) / hyp);
+                                double angle3 = (angle1 + angle2) - 90 * Math.PI / 180;
+                                double hkat = _Radius * Math.Cos(angle3);
+                                double vkat = _Radius * Math.Sin(angle3);
+                                //Координата Х для удлинения выреза
+                                double offsetX = _OffsetH * Math.Tan(angle3);
+                                AddContourPoint(hkat, -(_Height + _Height1 + vkat), centerpart, booleanCP, null);
+                            }
+                            AddContourPoint(-offsetpoint.X, - offsetpoint.Y, centerpart, booleanCP, null);
+
+                            //AddContourPoint(_Width + _Width1 / 2 + offsetX, _OffsetH, centerpart, booleanCP, null);
+                            
+                            TSG.Point OffsetPoint(double x, double y)
+                            {
+                                ArrayList intersectPoints = solidpart.Intersect(new TSG.Point(x, y - 100000), new TSG.Point(x, y + 100000));
+                                TSG.Point pointReturn = intersectPoints[0] as TSG.Point;
+                                foreach (TSG.Point intersectPoint in intersectPoints)
+                                {
+                                    if (Math.Abs(intersectPoint.Y) < Math.Abs(pointReturn.Y))
+                                    {
+                                        pointReturn = intersectPoint;
+                                    }
+                                }
+                                return pointReturn;
+                            }
                         }
                         break;
                     case 3:
@@ -442,7 +472,8 @@ namespace MB_Auto_CutObject1.Models
                     new TSG.Vector(0, 0, 1000));
                 CoordinateSystem endCS = new CoordinateSystem(
                     selectedpoint1,
-                    new TSG.Vector(selectedpoint2.X - selectedpoint1.X, selectedpoint2.Y - selectedpoint1.Y, 0),
+                    //new TSG.Vector(selectedpoint2.X - selectedpoint1.X, selectedpoint2.Y - selectedpoint1.Y, 0),
+                    new TSG.Vector(selectedpoint2),
                     new TSG.Vector(0, 0, 1000));
                 //Тип отзеркаливания выреза 
                 switch (_Mirror)
@@ -450,7 +481,7 @@ namespace MB_Auto_CutObject1.Models
                     case 0:
                         break;
                     case 1:
-                        endCS.AxisX = new TSG.Vector(-(selectedpoint2.X - selectedpoint1.X), -(selectedpoint2.Y - selectedpoint1.Y), 0); //что то не так. разобраться
+                        endCS.AxisX = new TSG.Vector(-selectedpoint2.X, -selectedpoint2.Y, 0); 
                         endCS.AxisY = new TSG.Vector(0, 0, -1000);
                         break;
                     case 2:
