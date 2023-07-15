@@ -76,9 +76,15 @@ namespace MB_Auto_CutObject1.Models
         //
         // Define variables for the field values.
         //
+        /// <summary>
+        /// Высота ребра
+        /// </summary>
         private double _Height = 0.0;
         private double _Height1 = 0.0;
         private double _Width = 0.0;
+        /// <summary>
+        /// Толщина продольного ребра
+        /// </summary>
         private double _Width1 = 0.0;
         private double _Width2 = 0.0;
         private double _Width3 = 0.0;
@@ -154,18 +160,16 @@ namespace MB_Auto_CutObject1.Models
                 Part selectedPart1 = (Part)Model.SelectModelObject((Identifier)Input[1].GetInput());
                 Solid solidpart = selectedPart.GetSolid();
                 Solid solidpart1 = selectedPart1.GetSolid();
-                //Получаем толщину продольного ребра
                 WorkPlaneHandler workPlaneHandler = Model.GetWorkPlaneHandler();
-                //TransformationPlane tpcurrent = workPlaneHandler.GetCurrentTransformationPlane();
+                //Получаем толщину продольного ребра
                 TransformationPlane tppart = new TransformationPlane(selectedPart.GetCoordinateSystem());
                 TransformationPlane tppart1 = new TransformationPlane(selectedPart1.GetCoordinateSystem());
                 workPlaneHandler.SetCurrentTransformationPlane(tppart1);
                 _Width1 = Math.Round(solidpart1.MaximumPoint.Z - solidpart1.MinimumPoint.Z);
-
+                //Переключаем на рабочую плоскость детали из которой необходимо сделать вырез
                 workPlaneHandler.SetCurrentTransformationPlane(tppart);
 
-
-                //Теория
+                //Получение линии пересечения средних плоскостей двух деталей
                 GeometricPlane geometricPlane = new GeometricPlane(
                     selectedPart.GetCoordinateSystem().Origin,
                     selectedPart.GetCoordinateSystem().AxisX,
@@ -176,20 +180,17 @@ namespace MB_Auto_CutObject1.Models
                     selectedPart1.GetCoordinateSystem().AxisY);
                 Line line = Intersection.PlaneToPlane(geometricPlane, geometricPlane1);
 
-                //Визуализировать
-
                 line.Direction.Normalize(10000); //Удлиняю линию
                 line.Origin.Translate(-line.Direction.X / 2, -line.Direction.Y / 2, -line.Direction.Z / 2); //Распределяю длинну линии
                 TSG.Point secondpoint = new TSG.Point(line.Origin);
-                
-                secondpoint.Translate(line.Direction.X, line.Direction.Y, line.Direction.Z);
+                secondpoint.Translate(line.Direction.X, line.Direction.Y, line.Direction.Z); //Дополнительная точка на линии пересечения
    
                 //Получание точек пересечения линии(пересечения) и тел
                 LineSegment lineSegment = new LineSegment(line.Origin, secondpoint);
                 ArrayList interFirstPoints = solidpart.Intersect(lineSegment);
                 ArrayList interSecondPoints = solidpart1.Intersect(lineSegment);
                 List<DifferencePoints> differencePoints = new List<DifferencePoints>();
-                // Выччисление разницы координат точек
+                // Вычисление разницы координат точек
                 foreach (TSG.Point interFirstPoint in interFirstPoints)
                 {
                     foreach (TSG.Point interSecondPoint in interSecondPoints)
@@ -200,50 +201,40 @@ namespace MB_Auto_CutObject1.Models
                 }
                 differencePoints.Sort();
                 //Наименьшая разница указывает что точки находтся ближе всего друг к другу
-                TSG.Point installationPoint = differencePoints[0].Point1;
+                TSG.Point installationPoint = differencePoints[0].Point1; //Точка установки выреза
 
-
-
-                //Линия пересечения у нас будет осью Y. Нужно получить ось X
-                //Получаю ее путем переноса точки с линии пересечения под 90 градусов к линии пересечения
-                ControlPoint second_CP = new ControlPoint(line.Direction);
-                second_CP.Insert();
+                //Вектор линии пересечения у нас будет осью Y. Нужно получить ось X
+                //Получаю ее путем переноса точки с линии пересечения под 90 градусов к вектору линии пересечения
                 Matrix matrix = MatrixFactory.Rotate(90 * Math.PI / 180, new TSG.Vector(0, 0, 100));
-                TSG.Point pointX = matrix.Transform(
-                    new TSG.Point(line.Direction));
-                ControlPoint cpX = new ControlPoint(pointX);
-                cpX.Insert();
-
+                TSG.Point pointAxisX = matrix.Transform(new TSG.Point(line.Direction));
+                //Создаем систему координат с нулём в точке установки и направленную по линии пересечения
                 CoordinateSystem drawing_cs = new CoordinateSystem(installationPoint,
-                new TSG.Vector(pointX),
+                new TSG.Vector(pointAxisX),
                 new TSG.Vector(line.Direction));
-
+                //Для использования ранее полученных точке в новой ситеме координат необходимо преобразовать их с помощью матрицы
                 Matrix toNewCS = MatrixFactory.ByCoordinateSystems(selectedPart.GetCoordinateSystem(), drawing_cs);
 
-                int rote = 1;
+                int route = 1; //Направление оси Y
+                //Проверяем куда направлено продольное реберо в новой системе координат относительно точки установки
+                //Это необходимо для понимания как распологать вырез
                 foreach (TSG.Point interSecondPoint in interSecondPoints)
                 {
                     if (interSecondPoint != differencePoints[0].Point2)
                     {
                         if (toNewCS.Transform(interSecondPoint).Y > 0)
                         {
-                            rote = -1;
+                            route = -1;
                         }
                     }
                 }
-
+                //Меняю систему координат на новую с нулём в точке установки и направленную по линии пересечения
                 workPlaneHandler.SetCurrentTransformationPlane(new TransformationPlane(drawing_cs));
 
-
-                ControlPoint cptestX = new ControlPoint(new TSG.Point(100, 0));
-                cptestX.Insert();
-                ControlPoint cptestY = new ControlPoint(new TSG.Point(0, 200));
-                cptestY.Insert();
-
+                _Height = Math.Abs(Math.Abs(toNewCS.Transform(interSecondPoints[0] as TSG.Point).Y) - Math.Abs(toNewCS.Transform(interSecondPoints[1] as TSG.Point).Y));
+                
                 //Построение
-
                 ContourPoint selectedpoint1 = new ContourPoint(new TSG.Point(0,0), null);
-                ContourPoint selectedpoint2 = new ContourPoint(new TSG.Point(rote * 100, 0), null);
+                ContourPoint selectedpoint2 = new ContourPoint(new TSG.Point(route * 100, 0), null);
 
                 double centerpart = (solidpart.MaximumPoint.Z + solidpart.MinimumPoint.Z) / 2;
 
