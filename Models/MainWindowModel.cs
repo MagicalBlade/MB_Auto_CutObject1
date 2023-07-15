@@ -327,9 +327,9 @@ namespace MB_Auto_CutObject1.Models
                             TSG.Point offsetpointLeft = GetIntersectionPoint(-_Width - _Width1 / 2, 0);
                             TSG.Point offsetpointRight = GetIntersectionPoint(_Width1 / 2 + _Width2 + _DimensionF1, 0);
                             //Подготовка данных для получения точки касательной к окружности
-                            double hyp = Math.Sqrt(Math.Pow(_Width + _Width1 - _Width3, 2) + Math.Pow(_Height + _Height1 - offsetpointLeft.Y, 2));
+                            double hyp = Math.Sqrt(Math.Pow(_Width + _Width1 - _Width3, 2) + Math.Pow(_Height + _Height1 + offsetpointLeft.Y, 2));
                             double angle1 = Math.Acos(_Radius / hyp);
-                            double angle2 = Math.Acos((_Height + _Height1 - offsetpointLeft.Y) / hyp);
+                            double angle2 = Math.Acos((_Height + _Height1 + offsetpointLeft.Y) / hyp);
                             double angle3 = (angle1 + angle2) - 90 * Math.PI / 180;
                             double hkat = _Radius * Math.Cos(angle3);
                             double vkat = _Radius * Math.Sin(angle3);
@@ -373,9 +373,11 @@ namespace MB_Auto_CutObject1.Models
                     case 4:
                         {
                             //Подготовка данных для получения точки касательной к окружности
-                            double hyp = Math.Sqrt(Math.Pow(_Width + _Width1 - _Width4, 2) + Math.Pow(_Height + _Height1, 2));
+                            TSG.Point offsetpointLeft = GetIntersectionPoint(-_Width - _Width1 / 2, 0);
+                            TSG.Point offsetpointRight = GetIntersectionPoint(_Width1 / 2 + _Width2 + _DimensionF1, 0);
+                            double hyp = Math.Sqrt(Math.Pow(_Width + _Width1 - _Width4, 2) + Math.Pow(_Height + _Height1 + offsetpointLeft.Y, 2));
                             double angle1 = Math.Acos(_Radius / hyp);
-                            double angle2 = Math.Acos((_Height + _Height1) / hyp);
+                            double angle2 = Math.Acos((_Height + _Height1 + offsetpointLeft.Y) / hyp);
                             double angle3 = (angle1 + angle2) - 90 * Math.PI / 180;
                             double hkat = _Radius * Math.Cos(angle3);
                             double vkat = _Radius * Math.Sin(angle3);
@@ -389,7 +391,7 @@ namespace MB_Auto_CutObject1.Models
                             switch (_TypeChamfer)
                             {
                                 case 0:
-                                    AddContourPoint(_Width1 / 2 + _Width2 + _DimensionF1 + _OffsetH, _OffsetH, 0, booleanCP, null);
+                                    AddContourPoint(_Width1 / 2 + _Width2 + _DimensionF1 + _OffsetH, offsetpointRight.Y + _OffsetH, 0, booleanCP, null);
                                     AddContourPoint(_Width1 / 2 + _Width2, 0 - _DimensionF1, 0, booleanCP, null);
                                     AddContourPoint(_Width1 / 2 + _Width2, 0 - (_Height + _Height1 - _Radius), 0, booleanCP, null);
                                     AddContourPoint(_Width1 / 2 + _Width2 + _Width3 + _Radius, 0 - (_Height + _Height1 - _Radius), 0, booleanCP, new Chamfer(_Radius, 0, Chamfer.ChamferTypeEnum.CHAMFER_ROUNDING));
@@ -398,12 +400,12 @@ namespace MB_Auto_CutObject1.Models
                                     AddContourPoint(_Width1 / 2 + _Width3, 0 - (_Height + _Height1 + _Radius), 0, booleanCP, null);
 
                                     AddContourPoint(_Width1 / 2 - _Width4 - hkat + hkat1, 0 - (_Height + _Height1 + _Radius), 0, booleanCP, new Chamfer(_Radius, 0, Chamfer.ChamferTypeEnum.CHAMFER_ROUNDING));
-                                    AddContourPoint(0 - _Width - _Width1 / 2 - offsetX, _OffsetH, 0, booleanCP, null);
+                                    AddContourPoint(0 - _Width - _Width1 / 2 - offsetX, offsetpointLeft.Y + _OffsetH, 0, booleanCP, null);
                                     break;
                                 case 1:
-                                    AddContourPoint(_Width1 / 2 + _Width2 + _DimensionF1, _OffsetH, 0, booleanCP, null);
-                                    AddContourPoint(_Width1 / 2 + _Width2 + _DimensionF1, 0 - _DimensionF1, 0, booleanCP, new Chamfer(_DimensionF1, 0, Chamfer.ChamferTypeEnum.CHAMFER_ROUNDING));
-                                    AddContourPoint(_Width1 / 2 + _Width2, 0 - _DimensionF1, 0, booleanCP, null);
+                                    AddContourPoint(_Width1 / 2 + _Width2 + _DimensionF1, offsetpointRight.Y + _OffsetH, 0, booleanCP, null);
+                                    AddContourPoint(_Width1 / 2 + _Width2 + _DimensionF1, offsetpointRight.Y - _DimensionF1, 0, booleanCP, new Chamfer(_DimensionF1, 0, Chamfer.ChamferTypeEnum.CHAMFER_ROUNDING));
+                                    AddContourPoint(_Width1 / 2 + _Width2, offsetpointRight.Y - _DimensionF1, 0, booleanCP, null);
                                     AddContourPoint(_Width1 / 2 + _Width2, 0 - (_Height + _Height1 - _Radius), 0, booleanCP, null);
                                     AddContourPoint(_Width1 / 2 + _Width2 + _Width3 + _Radius, 0 - (_Height + _Height1 - _Radius), 0, booleanCP, new Chamfer(_Radius, 0, Chamfer.ChamferTypeEnum.CHAMFER_ROUNDING));
                                     AddContourPoint(_Width1 / 2 + _Width2 + _Width3 + _Radius, 0 - (_Height + _Height1 + _Radius), 0, booleanCP, new Chamfer(_Radius, 0, Chamfer.ChamferTypeEnum.CHAMFER_ROUNDING));
@@ -411,12 +413,13 @@ namespace MB_Auto_CutObject1.Models
                                     AddContourPoint(_Width1 / 2 + _Width3, 0 - (_Height + _Height1 + _Radius), 0, booleanCP, null);
 
                                     AddContourPoint(_Width1 / 2 - _Width4 - hkat + hkat1, 0 - (_Height + _Height1 + _Radius), 0, booleanCP, new Chamfer(_Radius, 0, Chamfer.ChamferTypeEnum.CHAMFER_ROUNDING));
-                                    AddContourPoint(0 - _Width - _Width1 / 2 - offsetX, _OffsetH, 0, booleanCP, null);
+                                    AddContourPoint(0 - _Width - _Width1 / 2 - offsetX, offsetpointLeft.Y + _OffsetH, 0, booleanCP, null);
                                     break;
                                 case 2:
-                                    AddContourPoint(_Width1 / 2 + _Width2 + _DimensionF2, _OffsetH, 0, booleanCP, null);
-                                    AddContourPoint(_Width1 / 2 + _Width2 + _DimensionF2, 0 - _DimensionF3, 0, booleanCP, new Chamfer(_DimensionF1, 0, Chamfer.ChamferTypeEnum.CHAMFER_ROUNDING));
-                                    AddContourPoint(_Width1 / 2 + _Width2, 0 - _DimensionF3, 0, booleanCP, null);
+                                    TSG.Point offsetpointRightС2 = GetIntersectionPoint(_Width1 / 2 + _Width2 + _DimensionF2, 0);
+                                    AddContourPoint(_Width1 / 2 + _Width2 + _DimensionF2, offsetpointRightС2.Y + _OffsetH, 0, booleanCP, null);
+                                    AddContourPoint(_Width1 / 2 + _Width2 + _DimensionF2, offsetpointRightС2.Y - _DimensionF3, 0, booleanCP, new Chamfer(_DimensionF1, 0, Chamfer.ChamferTypeEnum.CHAMFER_ROUNDING));
+                                    AddContourPoint(_Width1 / 2 + _Width2, offsetpointRightС2.Y - _DimensionF3, 0, booleanCP, null);
                                     AddContourPoint(_Width1 / 2 + _Width2, 0 - (_Height + _Height1 - _Radius), 0, booleanCP, null);
                                     AddContourPoint(_Width1 / 2 + _Width2 + _Width3 + _Radius, 0 - (_Height + _Height1 - _Radius), 0, booleanCP, new Chamfer(_Radius, 0, Chamfer.ChamferTypeEnum.CHAMFER_ROUNDING));
                                     AddContourPoint(_Width1 / 2 + _Width2 + _Width3 + _Radius, 0 - (_Height + _Height1 + _Radius), 0, booleanCP, new Chamfer(_Radius, 0, Chamfer.ChamferTypeEnum.CHAMFER_ROUNDING));
@@ -424,7 +427,7 @@ namespace MB_Auto_CutObject1.Models
                                     AddContourPoint(_Width1 / 2 + _Width3, 0 - (_Height + _Height1 + _Radius), 0, booleanCP, null);
 
                                     AddContourPoint(_Width1 / 2 - _Width4 - hkat + hkat1, 0 - (_Height + _Height1 + _Radius), 0, booleanCP, new Chamfer(_Radius, 0, Chamfer.ChamferTypeEnum.CHAMFER_ROUNDING));
-                                    AddContourPoint(0 - _Width - _Width1 / 2 - offsetX, _OffsetH, 0, booleanCP, null);
+                                    AddContourPoint(0 - _Width - _Width1 / 2 - offsetX, offsetpointLeft.Y + _OffsetH, 0, booleanCP, null);
                                     break;
                             }
                         }
