@@ -159,10 +159,9 @@ namespace MB_Auto_CutObject1.Models
                 //TransformationPlane tpcurrent = workPlaneHandler.GetCurrentTransformationPlane();
                 TransformationPlane tppart = new TransformationPlane(selectedPart.GetCoordinateSystem());
                 TransformationPlane tppart1 = new TransformationPlane(selectedPart1.GetCoordinateSystem());
-                
                 workPlaneHandler.SetCurrentTransformationPlane(tppart1);
                 _Width1 = Math.Round(solidpart1.MaximumPoint.Z - solidpart1.MinimumPoint.Z);
-                
+
                 workPlaneHandler.SetCurrentTransformationPlane(tppart);
 
 
@@ -176,44 +175,21 @@ namespace MB_Auto_CutObject1.Models
                     selectedPart1.GetCoordinateSystem().AxisX,
                     selectedPart1.GetCoordinateSystem().AxisY);
                 Line line = Intersection.PlaneToPlane(geometricPlane, geometricPlane1);
-                
-
 
                 //Визуализировать
-                Plane plane = new Plane
-                {
-                    Origin = selectedPart.GetCoordinateSystem().Origin,
-                    AxisX = selectedPart.GetCoordinateSystem().AxisX,
-                    AxisY = selectedPart.GetCoordinateSystem().AxisY
-                };
-                Plane plane1 = new Plane
-                {
-                    Origin = selectedPart1.GetCoordinateSystem().Origin,
-                    AxisX = selectedPart1.GetCoordinateSystem().AxisX,
-                    AxisY = selectedPart1.GetCoordinateSystem().AxisY
-                };
-                ControlPlane controlPlane = new ControlPlane(plane, false);
-                controlPlane.Insert();
-                ControlPlane controlPlane1 = new ControlPlane(plane1, false);
-                controlPlane1.Insert();
-                
-                
 
-                line.Direction.Normalize(10000);
-                line.Origin.Translate(-line.Direction.X / 2, -line.Direction.Y / 2, -line.Direction.Z / 2);
+                line.Direction.Normalize(10000); //Удлиняю линию
+                line.Origin.Translate(-line.Direction.X / 2, -line.Direction.Y / 2, -line.Direction.Z / 2); //Распределяю длинну линии
                 TSG.Point secondpoint = new TSG.Point(line.Origin);
                 
                 secondpoint.Translate(line.Direction.X, line.Direction.Y, line.Direction.Z);
    
-
+                //Получание точек пересечения линии(пересечения) и тел
                 LineSegment lineSegment = new LineSegment(line.Origin, secondpoint);
-                ControlLine controlLine = new ControlLine(lineSegment, false);
-                controlLine.Insert();
-
-
                 ArrayList interFirstPoints = solidpart.Intersect(lineSegment);
                 ArrayList interSecondPoints = solidpart1.Intersect(lineSegment);
                 List<DifferencePoints> differencePoints = new List<DifferencePoints>();
+                // Выччисление разницы координат точек
                 foreach (TSG.Point interFirstPoint in interFirstPoints)
                 {
                     foreach (TSG.Point interSecondPoint in interSecondPoints)
@@ -223,48 +199,51 @@ namespace MB_Auto_CutObject1.Models
                     }
                 }
                 differencePoints.Sort();
-                ControlPoint controlPoint = new ControlPoint(differencePoints[0].Point1);
-                controlPoint.Insert();
-
-
-                //TransformationPlane tprotate = new TransformationPlane(
-                //    controlPoint.Point,
-                //    new TSG.Vector(line.Direction),
-                //    new TSG.Vector(new TSG.Point(0, 0, 100)));
-                //workPlaneHandler.SetCurrentTransformationPlane(tprotate);
-                //ControlPoint cpX = new ControlPoint(new TSG.Point(0, 0, 100));
-                //cpX.Insert();
-                //TransformationPlane tpdrawing = new TransformationPlane(
-                //    controlPoint.Point,
-                //    new TSG.Vector(new TSG.Point(0, 0, 100)),
-                //    new TSG.Vector(line.Direction));
-                //workPlaneHandler.SetCurrentTransformationPlane(tpdrawing);
-
-
-                workPlaneHandler.SetCurrentTransformationPlane(
-                    new TransformationPlane(
-                        new CoordinateSystem(controlPoint.Point,
-                    new TSG.Vector(100, 0 ,0),
-                    new TSG.Vector(0, 100, 0)
-                    )));
+                //Наименьшая разница указывает что точки находтся ближе всего друг к другу
+                TSG.Point installationPoint = differencePoints[0].Point1;
 
 
 
-                Matrix matrix = MatrixFactory.Rotate(-90 * Math.PI / 180, new TSG.Vector(0, 0, 100));
-                TSG.Point pointX = matrix.Transform(new TSG.Point(secondpoint.X - controlPoint.Point.X, secondpoint.Y - controlPoint.Point.Y));
+                //Линия пересечения у нас будет осью Y. Нужно получить ось X
+                //Получаю ее путем переноса точки с линии пересечения под 90 градусов к линии пересечения
+                ControlPoint second_CP = new ControlPoint(line.Direction);
+                second_CP.Insert();
+                Matrix matrix = MatrixFactory.Rotate(90 * Math.PI / 180, new TSG.Vector(0, 0, 100));
+                TSG.Point pointX = matrix.Transform(
+                    new TSG.Point(line.Direction));
                 ControlPoint cpX = new ControlPoint(pointX);
                 cpX.Insert();
 
-                ControlPoint cptest = new ControlPoint(new TSG.Point(0,0));
-                cptest.Insert();
-                ControlPoint cptestx = new ControlPoint(new TSG.Point(100, 0));
-                cptestx.Insert();
-                ControlPoint cptesty = new ControlPoint(new TSG.Point(0, 200));
-                cptesty.Insert();
+                CoordinateSystem drawing_cs = new CoordinateSystem(installationPoint,
+                new TSG.Vector(pointX),
+                new TSG.Vector(line.Direction));
+
+                Matrix toNewCS = MatrixFactory.ByCoordinateSystems(selectedPart.GetCoordinateSystem(), drawing_cs);
+
+                int rote = 1;
+                foreach (TSG.Point interSecondPoint in interSecondPoints)
+                {
+                    if (interSecondPoint != differencePoints[0].Point2)
+                    {
+                        if (toNewCS.Transform(interSecondPoint).Y > 0)
+                        {
+                            rote = -1;
+                        }
+                    }
+                }
+
+                workPlaneHandler.SetCurrentTransformationPlane(new TransformationPlane(drawing_cs));
+
+
+                ControlPoint cptestX = new ControlPoint(new TSG.Point(100, 0));
+                cptestX.Insert();
+                ControlPoint cptestY = new ControlPoint(new TSG.Point(0, 200));
+                cptestY.Insert();
+
                 //Построение
 
-                ContourPoint selectedpoint1 = new ContourPoint(new TSG.Point(0,0,0), null);
-                ContourPoint selectedpoint2 = new ContourPoint(pointX, null);
+                ContourPoint selectedpoint1 = new ContourPoint(new TSG.Point(0,0), null);
+                ContourPoint selectedpoint2 = new ContourPoint(new TSG.Point(rote * 100, 0), null);
 
                 double centerpart = (solidpart.MaximumPoint.Z + solidpart.MinimumPoint.Z) / 2;
 
