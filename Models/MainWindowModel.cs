@@ -65,7 +65,7 @@ namespace MB_Auto_CutObject1.Models
 
     }
 
-    [Plugin("Мостостроение.Авто. Выкружки и вырезы.")]
+    [Plugin("Мостостроение. Авто. Вырезы под продольные ребра.")]
     [PluginUserInterface("MB_Auto_CutObject1.Views.MainWindow")]
     [InputObjectDependency(InputObjectDependency.DEPENDENT)]
     public class MB_Auto_CutObject1 : PluginBase
@@ -200,6 +200,11 @@ namespace MB_Auto_CutObject1.Models
                         DifferencePoints differencePoint = new DifferencePoints(interFirstPoint, interSecondPoint);
                         differencePoints.Add(differencePoint);
                     }
+                }
+                if (differencePoints.Count == 0)
+                {
+                    MessageBox.Show("Не получилось найти точки пересечения: линии пересечения с телами позиций. Создайте вырез вручную.");
+                    return false;
                 }
                 differencePoints.Sort();
                 //Наименьшая разница указывает что точки находтся ближе всего друг к другу
@@ -506,8 +511,9 @@ namespace MB_Auto_CutObject1.Models
             {
                 MessageBox.Show("Ошибка в start");
                 MessageBox.Show(Exc.ToString());
+                return false;
             }
-            
+
             return true;
 
 
