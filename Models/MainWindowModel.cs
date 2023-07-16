@@ -133,10 +133,12 @@ namespace MB_Auto_CutObject1.Models
         {
             List<InputDefinition> Input = new List<InputDefinition>();
             Picker Picker = new Picker();
-
             Part part = (Part)Picker.PickObject(Picker.PickObjectEnum.PICK_ONE_PART, "Выберите деталь в которой будет вырез");
             Part part1 = (Part)Picker.PickObject(Picker.PickObjectEnum.PICK_ONE_PART, "Выберите продольное ребро");
-
+            while (part.Identifier.ID == part1.Identifier.ID)
+            {
+                part1 = (Part)Picker.PickObject(Picker.PickObjectEnum.PICK_ONE_PART, "Вы указали тоуже деталь. Выберите другую.");
+            }
             Input.Add(new InputDefinition(part.Identifier));
             Input.Add(new InputDefinition(part1.Identifier));
             return Input;
