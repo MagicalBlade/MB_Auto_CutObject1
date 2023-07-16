@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Tekla.Structures;
 using Tekla.Structures.Datatype;
+using Tekla.Structures.Forming;
 using Tekla.Structures.Geometry3d;
 using Tekla.Structures.Model;
 using Tekla.Structures.Model.Operations;
@@ -58,6 +59,8 @@ namespace MB_Auto_CutObject1.Models
         public int typeCut;
         [StructuresField("mirror")]
         public int mirror;
+        [StructuresField("autoWH")]
+        public int autoWH;
         [StructuresField("typeChamfer")]
         public int typeChamfer;
         #endregion
@@ -67,7 +70,6 @@ namespace MB_Auto_CutObject1.Models
 
     [Plugin("Мостостроение. Авто. Вырезы под продольные ребра.")]
     [PluginUserInterface("MB_Auto_CutObject1.Views.MainWindow")]
-    [InputObjectDependency(InputObjectDependency.DEPENDENT)]
     public class MB_Auto_CutObject1 : PluginBase
     {
         #region Fields
@@ -97,6 +99,7 @@ namespace MB_Auto_CutObject1.Models
         private double _DimensionF3 = 0.0;
         private int _TypeCut = 0;
         private int _Mirror = 0;
+        private int _AutoWH = 0;
         private int _TypeChamfer = 0;
 
         #endregion
@@ -167,7 +170,10 @@ namespace MB_Auto_CutObject1.Models
                 TransformationPlane tppart = new TransformationPlane(selectedPart.GetCoordinateSystem());
                 TransformationPlane tppart1 = new TransformationPlane(selectedPart1.GetCoordinateSystem());
                 workPlaneHandler.SetCurrentTransformationPlane(tppart1);
-                _Width1 = Math.Round(solidpart1.MaximumPoint.Z - solidpart1.MinimumPoint.Z);
+                if (_AutoWH == 0)
+                {
+                    _Width1 = Math.Round(solidpart1.MaximumPoint.Z - solidpart1.MinimumPoint.Z);
+                }
                 //Переключаем на рабочую плоскость детали из которой необходимо сделать вырез
                 workPlaneHandler.SetCurrentTransformationPlane(tppart);
 
@@ -191,6 +197,11 @@ namespace MB_Auto_CutObject1.Models
                 LineSegment lineSegment = new LineSegment(line.Origin, secondpoint);
                 ArrayList interFirstPoints = solidpart.Intersect(lineSegment);
                 ArrayList interSecondPoints = solidpart1.Intersect(lineSegment);
+                if (interFirstPoints.Count == 0 || interSecondPoints.Count == 0)
+                {
+                    MessageBox.Show("Не получилось найти точки пересечения: линии пересечения с телами позиций. Создайте вырез вручную.");
+                    return false;
+                }
                 List<DifferencePoints> differencePoints = new List<DifferencePoints>();
                 // Вычисление разницы координат точек
                 foreach (TSG.Point interFirstPoint in interFirstPoints)
@@ -200,11 +211,6 @@ namespace MB_Auto_CutObject1.Models
                         DifferencePoints differencePoint = new DifferencePoints(interFirstPoint, interSecondPoint);
                         differencePoints.Add(differencePoint);
                     }
-                }
-                if (differencePoints.Count == 0)
-                {
-                    MessageBox.Show("Не получилось найти точки пересечения: линии пересечения с телами позиций. Создайте вырез вручную.");
-                    return false;
                 }
                 differencePoints.Sort();
                 //Наименьшая разница указывает что точки находтся ближе всего друг к другу
@@ -219,7 +225,6 @@ namespace MB_Auto_CutObject1.Models
                 new TSG.Vector(line.Direction));
                 //Для использования ранее полученных точке в новой ситеме координат необходимо преобразовать их с помощью матрицы
                 Matrix toNewCS = MatrixFactory.ByCoordinateSystems(selectedPart.GetCoordinateSystem(), drawing_cs);
-
                 int routeX = 1; //Направление оси Y
                 int routeY = 1; //Направление оси Y
                 //Проверяем куда направлено продольное реберо в новой системе координат относительно точки установки
@@ -237,26 +242,32 @@ namespace MB_Auto_CutObject1.Models
                 }
                 //Меняю систему координат на новую с нулём в точке установки и направленную по линии пересечения
                 workPlaneHandler.SetCurrentTransformationPlane(new TransformationPlane(drawing_cs));
-                //Определяем высоту ребра с помощью второй точки пересечения с линией.
-                _Height = 0;
-                foreach (TSG.Point interSecondPoint in interSecondPoints)
+                if (_AutoWH == 0)
                 {
-                    double tempHeight = Math.Abs(toNewCS.Transform(interSecondPoint).Y);
-                    if (_Height < tempHeight)
+                    //Определяем высоту ребра с помощью второй точки пересечения с линией.
+                    _Height = 0;
+                    foreach (TSG.Point interSecondPoint in interSecondPoints)
                     {
-                        _Height = tempHeight;
+                        double tempHeight = Math.Abs(toNewCS.Transform(interSecondPoint).Y);
+                        if (_Height < tempHeight)
+                        {
+                            _Height = tempHeight;
+                        }
+                    }
+                    //Определяем толщину ребра в месте пересечение с поперечным ребром.
+                    ArrayList interForThickness = solidpart1.Intersect(new TSG.Point(-100, -_Height / 2), new TSG.Point(100, -_Height / 2));
+                    if (interForThickness.Count == 2)
+                    {
+                        _Width1 = Math.Abs((interForThickness[0] as TSG.Point).X - (interForThickness[1] as TSG.Point).X);
                     }
                 }
-                //Тип отзеркаливания выреза 
+                //Разворачивать вырез или нет
                 switch (_Mirror)
                 {
                     case 0:
                         break;
                     case 1:
                         routeX *= -1;
-                        break;
-                    case 2:
-                        routeY *= -1;
                         break;
                 }
                 //Разворачиваем плоскость в зависимости от расположения продольного ребра и типа отзеркаливания
@@ -276,24 +287,6 @@ namespace MB_Auto_CutObject1.Models
                 switch (_TypeCut)
                 {
                     case 0:
-                        {
-                            AddContourPoint(0 - _OffsetL, 0 - _OffsetH, 0, booleanCP, null);
-                            AddContourPoint(0 - _OffsetL, _Height, 0, booleanCP, null);
-                            AddContourPoint(_Width, _Height, 0, booleanCP, new Chamfer(_Radius, 0, Chamfer.ChamferTypeEnum.CHAMFER_ROUNDING));
-                            AddContourPoint(_Width, -_OffsetH, 0, booleanCP, null);
-                        }
-                        break;
-                    case 1:
-                        {
-                            AddContourPoint(0 + _Width + _Radius, _Height, 0, booleanCP, new Chamfer(_Radius, 0, Chamfer.ChamferTypeEnum.CHAMFER_ROUNDING));
-                            AddContourPoint(0 + _Width - _Width1, _Height, 0, booleanCP, null);
-                            AddContourPoint(0 + _Width - _Width1, 0 - _OffsetH, 0, booleanCP, null);
-                            AddContourPoint(0 - _OffsetL, 0 - _OffsetH, 0, booleanCP, null);
-                            AddContourPoint(0 - _OffsetL, _Height + 2 * _Radius, 0, booleanCP, null);
-                            AddContourPoint(_Width + _Radius, _Height + 2 * _Radius, 0, booleanCP, new Chamfer(_Radius, 0, Chamfer.ChamferTypeEnum.CHAMFER_ROUNDING));
-                        }
-                        break;
-                    case 2:
                         {
                             //Перенос точки выреза на кромку детали
                             TSG.Point offsetpoint = GetIntersectionPoint(- _Width - _Width1 / 2, 0);
@@ -328,7 +321,7 @@ namespace MB_Auto_CutObject1.Models
                             
                         }
                         break;
-                    case 3:
+                    case 1:
                         {
                             //Перенос точки выреза на кромку детали
                             TSG.Point offsetpointLeft = GetIntersectionPoint(-_Width - _Width1 / 2, 0);
@@ -377,7 +370,7 @@ namespace MB_Auto_CutObject1.Models
                             }
                         }
                         break;
-                    case 4:
+                    case 2:
                         {
                             //Подготовка данных для получения точки касательной к окружности
                             TSG.Point offsetpointLeft = GetIntersectionPoint(-_Width - _Width1 / 2, 0);
@@ -439,7 +432,7 @@ namespace MB_Auto_CutObject1.Models
                             }
                         }
                         break;
-                    case 5:
+                    case 3:
                         {
                             TSG.Point offsetpoint = GetIntersectionPoint(_Width1 / 2 + _Width2 + _DimensionF1, 0);
                             //Подготовка данных для получения точки на окружности при смещении от продольного ребра
@@ -547,6 +540,7 @@ namespace MB_Auto_CutObject1.Models
             _DimensionF3 = Data.dimensionF3;
             _TypeCut = Data.typeCut;
             _Mirror = Data.mirror;
+            _AutoWH = Data.autoWH;
             _TypeChamfer = Data.typeChamfer;
 
 
@@ -582,6 +576,8 @@ namespace MB_Auto_CutObject1.Models
                 _TypeCut = 0;
             if (IsDefaultValue(_Mirror))
                 _Mirror = 0;
+            if (IsDefaultValue(_AutoWH))
+                _AutoWH = 0;
             if (IsDefaultValue(_TypeChamfer))
                 _TypeChamfer = 0;
         }

@@ -28,6 +28,7 @@ namespace MB_Auto_CutObject1.ViewModels
         private double dimensionF3 = 0.0;
         private int typeCut = 0;
         private int mirror = 0;
+        private int autoWH = 0;
         private int typeChamfer = 0;
         #endregion
 
@@ -122,6 +123,12 @@ namespace MB_Auto_CutObject1.ViewModels
         {
             get { return mirror; }
             set { mirror = value; OnPropertyChanged("Mirror"); }
+        }
+        [StructuresDialog("autoWH", typeof(TD.Integer))]
+        public int AutoWH
+        {
+            get { return autoWH; }
+            set { autoWH = value; OnPropertyChanged("AutoWH"); }
         }
         [StructuresDialog("typeChamfer", typeof(TD.Integer))]
         public int TypeChamfer

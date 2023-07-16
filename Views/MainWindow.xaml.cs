@@ -76,34 +76,6 @@ namespace MB_Auto_CutObject1.Views
             {
                 case 0:
                     sp_Height.Visibility = Visibility.Visible;
-                    sp_Height1.Visibility = Visibility.Collapsed;
-                    sp_Width.Visibility = Visibility.Visible;
-                    sp_Width1.Visibility = Visibility.Collapsed;
-                    sp_Width2.Visibility = Visibility.Collapsed;
-                    sp_Width3.Visibility = Visibility.Collapsed;
-                    sp_Width4.Visibility = Visibility.Collapsed;
-                    sp_Radius.Visibility = Visibility.Visible;
-                    sp_OffsetH.Visibility = Visibility.Visible;
-                    sp_OffsetL.Visibility = Visibility.Visible;
-
-                    sp_typeChamfer.Visibility = Visibility.Hidden;
-                    break;
-                case 1:
-                    sp_Height.Visibility = Visibility.Visible;
-                    sp_Height1.Visibility = Visibility.Collapsed;
-                    sp_Width.Visibility = Visibility.Visible;
-                    sp_Width1.Visibility = Visibility.Visible;
-                    sp_Width2.Visibility = Visibility.Collapsed;
-                    sp_Width3.Visibility = Visibility.Collapsed;
-                    sp_Width4.Visibility = Visibility.Collapsed;
-                    sp_Radius.Visibility = Visibility.Visible;
-                    sp_OffsetH.Visibility = Visibility.Visible;
-                    sp_OffsetL.Visibility = Visibility.Visible;
-
-                    sp_typeChamfer.Visibility = Visibility.Hidden;
-                    break;
-                case 2:
-                    sp_Height.Visibility = Visibility.Visible;
                     sp_Height1.Visibility = Visibility.Visible;
                     sp_Width.Visibility = Visibility.Visible;
                     sp_Width1.Visibility = Visibility.Visible;
@@ -112,11 +84,10 @@ namespace MB_Auto_CutObject1.Views
                     sp_Width4.Visibility = Visibility.Collapsed;
                     sp_Radius.Visibility = Visibility.Visible;
                     sp_OffsetH.Visibility = Visibility.Visible;
-                    sp_OffsetL.Visibility = Visibility.Collapsed;
 
                     sp_typeChamfer.Visibility = Visibility.Hidden;
                     break;
-                case 3:
+                case 1:
                     sp_Height.Visibility = Visibility.Visible;
                     sp_Height1.Visibility = Visibility.Visible;
                     sp_Width.Visibility = Visibility.Visible;
@@ -126,11 +97,10 @@ namespace MB_Auto_CutObject1.Views
                     sp_Width4.Visibility = Visibility.Collapsed;
                     sp_Radius.Visibility = Visibility.Visible;
                     sp_OffsetH.Visibility = Visibility.Visible;
-                    sp_OffsetL.Visibility = Visibility.Collapsed;
 
                     sp_typeChamfer.Visibility = Visibility.Visible;
                     break;
-                case 4:
+                case 2:
                     sp_Height.Visibility = Visibility.Visible;
                     sp_Height1.Visibility = Visibility.Visible;
                     sp_Width.Visibility = Visibility.Visible;
@@ -140,11 +110,10 @@ namespace MB_Auto_CutObject1.Views
                     sp_Width4.Visibility = Visibility.Visible;
                     sp_Radius.Visibility = Visibility.Visible;
                     sp_OffsetH.Visibility = Visibility.Visible;
-                    sp_OffsetL.Visibility = Visibility.Collapsed;
 
                     sp_typeChamfer.Visibility = Visibility.Visible;
                     break;
-                case 5:
+                case 3:
                     sp_Height.Visibility = Visibility.Visible;
                     sp_Height1.Visibility = Visibility.Visible;
                     sp_Width.Visibility = Visibility.Collapsed;
@@ -154,7 +123,6 @@ namespace MB_Auto_CutObject1.Views
                     sp_Width4.Visibility = Visibility.Collapsed;
                     sp_Radius.Visibility = Visibility.Visible;
                     sp_OffsetH.Visibility = Visibility.Visible;
-                    sp_OffsetL.Visibility = Visibility.Collapsed;
 
                     sp_typeChamfer.Visibility = Visibility.Visible;
                     break;
@@ -180,6 +148,22 @@ namespace MB_Auto_CutObject1.Views
                     sp_DimensionF1.Visibility = Visibility.Visible;
                     sp_DimensionF2.Visibility = Visibility.Visible;
                     sp_DimensionF3.Visibility = Visibility.Visible;
+                    break;
+            }
+        }
+
+        private void cb_autoWH_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ListBox listBox = (ListBox)sender;
+            switch (listBox.SelectedIndex)
+            {
+                case 0:
+                    sp_Width1.IsEnabled= false;
+                    sp_Height.IsEnabled= false;
+                    break;
+                case 1:
+                    sp_Width1.IsEnabled = true;
+                    sp_Height.IsEnabled = true;
                     break;
             }
         }
