@@ -8,7 +8,7 @@
         xmlns:UIControls="clr-namespace:Tekla.Structures.Dialog.UIControls;assembly=Tekla.Structures.Dialog" 
                       xmlns:viewmodels="clr-namespace:MB_Auto_CutObject1.ViewModels" d:DataContext="{d:DesignInstance Type=viewmodels:MainWindowViewModel}"
                       mc:Ignorable="d"
-        Title="Мостостроение. Выкружки и вырезы." Height="600" Width="700" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" Background="#FFF0F0F0" >
+        Title="Мостостроение. Авто. Вырезы под продольные ребра." Height="600" Width="700" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" Background="#FFF0F0F0" >
     <Window.Resources>
         <Style TargetType="ItemsControl">
             <Setter Property="Padding" Value="2"/>
@@ -529,18 +529,29 @@
                         </StackPanel>
                     </GroupBox>
                     <!--Зеркальное отражение выреза-->
-                    <StackPanel Orientation="Vertical" Margin="10,0,0,0">
-                        <StackPanel Orientation="Horizontal">
-                            <Label x:Name="l_mirror" Content="Развернуть" VerticalAlignment="Center"/>
-                            <UIControls:WpfFilterCheckBox AttributeName="mirror" VerticalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal">
+                        <StackPanel Orientation="Vertical" Margin="0">
+                            <StackPanel Orientation="Horizontal">
+                                <Label x:Name="l_mirror" Content="Развернуть" VerticalAlignment="Center"/>
+                                <UIControls:WpfFilterCheckBox AttributeName="mirror" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <ListBox x:Name="cb_mirror" SelectedIndex="{Binding Mirror}" Width="100" HorizontalAlignment="Left">
+                                <TextBlock Text="Нет"/>
+                                <TextBlock Text="Да"/>
+                            </ListBox>
                         </StackPanel>
-                        <ListBox x:Name="cb_mirror" SelectedIndex="{Binding Mirror}" Width="120" HorizontalAlignment="Left">
-                            <TextBlock Text="Нет"/>
-                            <TextBlock Text="Да"/>
-                        </ListBox>
+                        <!--Задать толщину и высоту ребра вручную-->
+                        <StackPanel Orientation="Vertical" Margin="10,0,0,0">
+                            <StackPanel Orientation="Horizontal">
+                                <Label x:Name="l_autoWH" Content="Задать толщину и высоту" VerticalAlignment="Center"/>
+                                <UIControls:WpfFilterCheckBox AttributeName="autoWH" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <ListBox x:Name="cb_autoWH" SelectedIndex="{Binding AutoWH}" Width="100" HorizontalAlignment="Left" SelectionChanged="cb_autoWH_SelectionChanged">
+                                <TextBlock Text="Нет"/>
+                                <TextBlock Text="Да"/>
+                            </ListBox>
+                        </StackPanel>
                     </StackPanel>
-                    
-
                 </StackPanel>
                 <!--Параметры выреза-->
                 <StackPanel Orientation="Vertical">
@@ -590,14 +601,7 @@
                         <TextBox x:Name="tb_OffsetH" Text="{Binding OffsetH, Mode=TwoWay}" Height="25" Width="100" VerticalAlignment="Center"/>
                     </StackPanel>
                     
-                    <StackPanel Orientation="Horizontal">
-                        <Label x:Name="l_autoWH" Content="Задать толщину и высоту" VerticalAlignment="Center"/>
-                        <UIControls:WpfFilterCheckBox AttributeName="autoWH" VerticalAlignment="Center"/>
-                    </StackPanel>
-                    <ListBox x:Name="cb_autoWH" SelectedIndex="{Binding AutoWH}" Width="120" HorizontalAlignment="Left" SelectionChanged="cb_autoWH_SelectionChanged">
-                        <TextBlock Text="Нет"/>
-                        <TextBlock Text="Да"/>
-                    </ListBox>
+                    
                 </StackPanel>
                 <!--Тип и параметры фаски/выкружки-->
                 <StackPanel Name="sp_typeChamfer" Orientation="Vertical" Margin="10,0">
